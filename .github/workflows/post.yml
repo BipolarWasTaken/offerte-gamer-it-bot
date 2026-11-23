@@ -25,11 +25,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - run: pip install pillow
       - name: Esegui
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           MODE: ${{ github.event.inputs.mode || 'loop' }}
         run: |
           if [ "$MODE" = "check" ]; then python post.py check
+          elif [ "$MODE" = "imgtest" ]; then python post.py imgtest B09B8X9RGM B0DKKH9H5V B0DQ5XX1FP
           elif [ "$MODE" = "run" ]; then python post.py
           else python post.py loop 58; fi
