@@ -67,15 +67,16 @@ def make_card(title, price=None, old=None, pct=None, photo=None, deal=""):
     else:
         d.rounded_rectangle([60, top + 20, W - 60, bottom - 20], radius=40, fill=(245, 245, 247))
         words, lines, cur = title.upper().split(), [], ""
-        f = F(ANTON, 110)
+        f = F(ANTON, 90)
         for w in words:
             t = (cur + " " + w).strip()
             if d.textlength(t, font=f) <= W - 200: cur = t
             else: lines.append(cur); cur = w
         if cur: lines.append(cur)
-        y = top + 40 + max(0, (bottom - top - 80 - len(lines[:4]) * 125) // 2)
-        for ln in lines[:4]:
-            d.text(((W - d.textlength(ln, font=f)) / 2, y), ln, font=f, fill=(17, 17, 17)); y += 125
+        n = len(lines[:3])
+        y = 450 + max(0, (310 - n * 105) // 2) if pct else top + 40 + max(0, (bottom - top - 80 - n * 105) // 2)
+        for ln in lines[:3]:
+            d.text(((W - d.textlength(ln, font=f)) / 2, y), ln, font=f, fill=(17, 17, 17)); y += 105
     # badge sconto
     if pct:
         cx, cy, r = 190, 290, 140
