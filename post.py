@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-"""Pubblica su Telegram le righe di queue.csv con status=pending e send_at <= ora (Europe/Rome)."""
-import csv, os, sys, json, urllib.parse, urllib.request
+"""Pubblica su Telegram le righe di queue.csv con status=pending e send_at <= ora (Europe/Rome).
+
+Uso:
+  python post.py            un solo passaggio
+  python post.py loop 58    resta attivo ~58 minuti, controlla la coda ogni minuto (git pull a ogni giro)
+  python post.py check      verifica bot e canale
+"""
+import csv, os, sys, json, time, html, subprocess, urllib.parse, urllib.request
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -8,35 +14,53 @@ ROME = ZoneInfo("Europe/Rome")
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@OfferteGamerIT")
 TAG = os.environ.get("AFFILIATE_TAG", "offertegameri-21")
-FIELDS = ["id", "send_at", "category", "emoji", "title", "asin", "status", "note", "source", "sent_at"]
+FIELDS = ["id", "send_at", "category", "emoji", "title", "asin", "status", "note", "source", "sent_at", "hook", "deal"]
+MAX_PER_PASS = 3          # massimo post per controllo (evita raffiche)
+GRACE_HOURS = 12          # oltre questo ritardo il post viene scartato come "scaduto"
+SHARE_URL = "https://t.me/share/url?url=https%3A%2F%2Ft.me%2FOfferteGamerIT&text=Offerte%20Amazon%20verificate%20ogni%20giorno"
+
+LABEL = {
+    "giochi": "GAMING", "console": "CONSOLE", "controller": "GAMING", "cuffie": "AUDIO", "storage": "PC & STORAGE",
+    "pc": "PC", "laptop": "PC & LAPTOP", "monitor": "MONITOR", "tv": "TV", "smartphone": "SMARTPHONE",
+    "audio": "AUDIO", "gadget": "GADGET", "casa": "CASA", "altro": "TECH",
+}
 HASHTAGS = {
     "giochi": "#Gaming #PS5 #Xbox", "console": "#Gaming #PS5 #Xbox", "controller": "#Gaming #PS5",
     "cuffie": "#Audio #Gaming", "storage": "#SSD #PC", "pc": "#PC #Tech", "laptop": "#PC #Tech",
     "monitor": "#Monitor #PC", "tv": "#TV #Tech", "smartphone": "#Smartphone #Tech",
     "audio": "#Audio #Tech", "gadget": "#Gadget #Tech", "casa": "#Casa #Tech", "altro": "#Tech",
 }
-NOTE_DEFAULT = "In promo nella Settimana del Black Friday Amazon (fino al 30/11, fino a esaurimento scorte)."
+HOOK_DEFAULT = "Sconto attivo adesso su Amazon: il prezzo aggiornato lo vedi nella pagina del prodotto."
+DEAL_DEFAULT = "OFFERTA BLACK FRIDAY"
+
+
+def link(r):
+    return f"https://www.amazon.it/dp/{r['asin'].strip()}?tag={TAG}"
 
 
 def message(r):
-    note = (r.get("note") or NOTE_DEFAULT).strip()
-    tags = HASHTAGS.get(r["category"].strip().lower(), "#Tech")
+    cat = (r.get("category") or "altro").strip().lower()
+    deal = (r.get("deal") or DEAL_DEFAULT).strip().upper()
+    hook = html.escape((r.get("hook") or HOOK_DEFAULT).strip())
+    title = html.escape(r["title"].strip())
+    url = link(r)
     return (
-        f"{r['emoji'].strip()} {r['title'].strip()}\n\n"
-        f"📝 {note}\n\n"
-        f"👉 https://www.amazon.it/dp/{r['asin'].strip()}?tag={TAG}\n\n"
-        "In qualità di Affiliato Amazon io ricevo un guadagno dagli acquisti idonei.\n"
-        "Prezzi e disponibilità possono variare: controlla sempre la pagina del prodotto.\n"
-        f"#BlackFriday #Offerte {tags}\n#adv\n"
-        "📲 Condividi il canale su WhatsApp: https://wa.me/?text=https%3A%2F%2Ft.me%2FOfferteGamerIT"
+        f"🔥 <b>{html.escape(deal)}</b> · {LABEL.get(cat, 'TECH')}\n\n"
+        f"{r['emoji'].strip()} <b>{title}</b>\n\n"
+        f"✅ {hook}\n"
+        "⏳ Promo Black Friday Week: fino al 30/11, fino a esaurimento scorte\n\n"
+        f"👉 <a href=\"{url}\"><b>APRI L'OFFERTA SU AMAZON</b></a>\n\n"
+        f"#BlackFriday #Offerte {HASHTAGS.get(cat, '#Tech')} #adv\n"
+        "<i>Link affiliato: come Affiliato Amazon guadagno dagli acquisti idonei. "
+        "Prezzo e disponibilità possono variare.</i>"
     )
 
 
-def send(text):
-    data = urllib.parse.urlencode({"chat_id": CHAT, "text": text}).encode()
-    req = urllib.request.Request(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data=data)
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.load(resp)
+def keyboard(r):
+    return json.dumps({"inline_keyboard": [
+        [{"text": "🛒 VAI ALL'OFFERTA SU AMAZON", "url": link(r)}],
+        [{"text": "📣 Condividi il canale", "url": SHARE_URL}],
+    ]})
 
 
 def api(method, **params):
@@ -46,44 +70,98 @@ def api(method, **params):
         return json.load(resp)
 
 
-def main():
-    if not TOKEN:
-        print("TELEGRAM_BOT_TOKEN mancante"); return 1
-    if len(sys.argv) > 1 and sys.argv[1] == "check":
-        me = api("getMe")["result"]
-        mem = api("getChatMember", chat_id=CHAT, user_id=me["id"])["result"]
-        print("bot:", me["username"], "| stato nel canale:", mem["status"], "| può pubblicare:", mem.get("can_post_messages"))
-        return 0
+def send(r):
+    preview = json.dumps({"url": link(r), "prefer_large_media": True, "show_above_text": True})
+    return api("sendMessage", chat_id=CHAT, text=message(r), parse_mode="HTML",
+               reply_markup=keyboard(r), link_preview_options=preview)
+
+
+def git(*args):
+    return subprocess.run(["git", *args], capture_output=True, text=True)
+
+
+def load():
     with open("queue.csv", newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
+        return list(csv.DictReader(f))
+
+
+def save(rows):
+    with open("queue.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") or "" for k in FIELDS})
+
+
+def one_pass():
+    rows = load()
     now = datetime.now(ROME).replace(tzinfo=None)
     sent = 0
+    changed = False
     for r in rows:
         if (r.get("status") or "").strip().lower() != "pending":
             continue
         try:
             when = datetime.strptime(r["send_at"].strip(), "%Y-%m-%d %H:%M")
         except ValueError:
-            r["status"] = "errore-data"; continue
+            r["status"] = "errore-data"; changed = True; continue
         if when > now:
             continue
-        if now - when > timedelta(hours=6):
-            r["status"] = "scaduto"; continue
-        if len(r["asin"].strip()) != 10:
-            r["status"] = "errore-asin"; continue
+        if now - when > timedelta(hours=GRACE_HOURS):
+            r["status"] = "scaduto"; changed = True; continue
+        if len((r.get("asin") or "").strip()) != 10:
+            r["status"] = "errore-asin"; changed = True; continue
+        if sent >= MAX_PER_PASS:
+            continue
         try:
-            res = send(message(r))
+            res = send(r)
             r["status"] = "sent" if res.get("ok") else "errore-api"
             r["sent_at"] = now.strftime("%Y-%m-%d %H:%M")
             sent += 1
         except Exception as e:  # non stampare mai il token
             r["status"] = "errore-rete"
             print("errore invio", r["id"], type(e).__name__)
-    with open("queue.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
-        w.writeheader()
-        for r in rows:
-            w.writerow({k: r.get(k, "") for k in FIELDS})
+        changed = True
+        time.sleep(2)
+    if changed:
+        save(rows)
+    return sent, changed
+
+
+def commit_queue():
+    git("config", "user.name", "offerte-bot")
+    git("config", "user.email", "bot@users.noreply.github.com")
+    git("add", "queue.csv")
+    if git("diff", "--cached", "--quiet").returncode == 0:
+        return
+    git("commit", "-m", "coda aggiornata")
+    for _ in range(3):
+        if git("push").returncode == 0:
+            return
+        git("pull", "--rebase", "--autostash")
+
+
+def main():
+    if not TOKEN:
+        print("TELEGRAM_BOT_TOKEN mancante"); return 1
+    mode = sys.argv[1] if len(sys.argv) > 1 else "run"
+    if mode == "check":
+        me = api("getMe")["result"]
+        mem = api("getChatMember", chat_id=CHAT, user_id=me["id"])["result"]
+        print("bot:", me["username"], "| stato nel canale:", mem["status"], "| può pubblicare:", mem.get("can_post_messages"))
+        return 0
+    if mode == "loop":
+        minutes = int(sys.argv[2]) if len(sys.argv) > 2 else 58
+        end = time.time() + minutes * 60
+        while time.time() < end:
+            git("pull", "--rebase", "--autostash")
+            sent, changed = one_pass()
+            if changed:
+                commit_queue()
+            print(datetime.now(ROME).strftime("%H:%M"), "inviati:", sent, flush=True)
+            time.sleep(60)
+        return 0
+    sent, changed = one_pass()
     print("inviati:", sent)
     return 0
 

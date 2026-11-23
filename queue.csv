@@ -1,11 +1,11 @@
-id,send_at,category,emoji,title,asin,status,note,source,sent_at
-20261127-1030-1,2026-11-27 10:30,giochi,🎮,Split Fiction (Xbox),B0DQ5XX1FP,pending,,verificato su Amazon.it 22/11,
-20261127-1300-1,2026-11-27 13:00,giochi,🎮,Disney Epic Mickey: Rebrushed (Xbox),B0CW3KL79L,pending,,verificato su Amazon.it 22/11,
-20261123-1830-1,2026-11-23 18:30,gadget,🔊,Amazon Echo Dot (modello 2022),B09B8X9RGM,pending,,"Tuttotech, Libero Tecnologia",
-20261124-1100-1,2026-11-24 11:00,gadget,📺,Amazon Fire TV Stick 4K (ultimo modello),B0GSH6FCBN,pending,,"Libero Tecnologia, Tuttotech, Gametimers",
-20261123-1230-1,2026-11-23 12:30,smartphone,📱,Xiaomi Redmi Note 17 Pro 5G (8/512 GB),B0H4H4JYH9,sent,,"Libero Tecnologia, Infotelematico",2026-11-23 13:14
-20261123-2100-1,2026-11-23 21:00,audio,🎧,Soundcore P31i (Anker) auricolari Bluetooth,B0FNWCYLZN,pending,,"Infotelematico, Libero Tecnologia",
-20261124-1530-1,2026-11-24 15:30,casa,🍟,"Philips Airfryer Serie 1000 7,1 L",B0DKKH9H5V,pending,,"Libero Tecnologia, Infotelematico",
-20261124-2030-1,2026-11-24 20:30,smartphone,📱,Google Pixel 11 (256 GB),B0H62LV77B,pending,,"Infotelematico, Libero Tecnologia",
-20261125-1130-1,2026-11-25 11:30,gadget,🤖,roborock Qrevo Curv 2 Flow robot aspirapolvere,B0FS16B394,pending,,"Libero Tecnologia, Infotelematico, Tuttotech",
-20261125-1900-1,2026-11-25 19:00,casa,🧹,Dyson V8 Origin aspirapolvere senza fili,B0GVP7XY36,pending,,"Libero Tecnologia, YourLifeUpdated",
+id,send_at,category,emoji,title,asin,status,note,source,sent_at,hook,deal
+20261127-1030-1,2026-11-27 10:30,giochi,🎮,Split Fiction (Xbox),B0DQ5XX1FP,pending,,verificato su Amazon.it 22/11,,"Avventura co-op per 2 giocatori su Xbox, dai creatori di It Takes Two.",Offerta Black Friday
+20261127-1300-1,2026-11-27 13:00,giochi,🎮,Disney Epic Mickey: Rebrushed (Xbox),B0CW3KL79L,pending,,verificato su Amazon.it 22/11,,"Il remake dell'avventura Disney con Topolino, ora su Xbox con grafica rinnovata.",Offerta Black Friday
+20261123-1830-1,2026-11-23 18:30,gadget,🔊,Amazon Echo Dot (modello 2022),B09B8X9RGM,pending,,"Tuttotech, Libero Tecnologia",,"Smart speaker con Alexa: musica, timer e controllo della casa smart con la voce.",Offerta Black Friday
+20261124-1100-1,2026-11-24 11:00,gadget,📺,Amazon Fire TV Stick 4K (ultimo modello),B0GSH6FCBN,pending,,"Libero Tecnologia, Tuttotech, Gametimers",,"Trasforma la TV in smart TV: streaming 4K con Netflix, Prime Video, Disney+ e Alexa.",Offerta Black Friday
+20261123-1230-1,2026-11-23 12:30,smartphone,📱,Xiaomi Redmi Note 17 Pro 5G (8/512 GB),B0H4H4JYH9,sent,,"Libero Tecnologia, Infotelematico",2026-11-23 13:14,"Smartphone 5G con 512 GB di memoria: tanto spazio per foto, app e giochi.",Offerta Black Friday
+20261123-2100-1,2026-11-23 21:00,audio,🎧,Soundcore P31i (Anker) auricolari Bluetooth,B0FNWCYLZN,pending,,"Infotelematico, Libero Tecnologia",,"Auricolari Bluetooth con cancellazione attiva del rumore, per musica e chiamate.",Offerta Black Friday
+20261124-1530-1,2026-11-24 15:30,casa,🍟,"Philips Airfryer Serie 1000 7,1 L",B0DKKH9H5V,pending,,"Libero Tecnologia, Infotelematico",,"Friggitrice ad aria da 7,1 litri: cucina croccante con poco olio, anche per tutta la famiglia.",Offerta Black Friday
+20261124-2030-1,2026-11-24 20:30,smartphone,📱,Google Pixel 11 (256 GB),B0H62LV77B,pending,,"Infotelematico, Libero Tecnologia",,Smartphone Google da 256 GB: fotocamera top e software sempre aggiornato.,Offerta Black Friday
+20261125-1130-1,2026-11-25 11:30,gadget,🤖,roborock Qrevo Curv 2 Flow robot aspirapolvere,B0FS16B394,pending,,"Libero Tecnologia, Infotelematico, Tuttotech",,Robot aspirapolvere e lavapavimenti con stazione di svuotamento automatico.,Offerta Black Friday
+20261125-1900-1,2026-11-25 19:00,casa,🧹,Dyson V8 Origin aspirapolvere senza fili,B0GVP7XY36,pending,,"Libero Tecnologia, YourLifeUpdated",,"Aspirapolvere senza fili Dyson: potente, leggero e pratico per tutta la casa.",Offerta Black Friday

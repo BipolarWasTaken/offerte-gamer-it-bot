@@ -1,20 +1,25 @@
 name: Pubblica offerte su Telegram
+
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "17,47 * * * *"
   workflow_dispatch:
     inputs:
       mode:
-        description: "run = pubblica la coda, check = verifica bot e canale (non posta)"
-        default: "run"
+        description: "run = pubblica ora, loop = resta attivo ~58 min, check = verifica bot e canale (non posta)"
+        default: "loop"
+
 permissions:
   contents: write
+
 concurrency:
   group: post-queue
   cancel-in-progress: false
+
 jobs:
   post:
     runs-on: ubuntu-latest
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,11 +28,8 @@ jobs:
       - name: Esegui
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          MODE: ${{ github.event.inputs.mode || 'loop' }}
         run: |
-          if [ "${{ github.event.inputs.mode }}" = "check" ]; then python post.py check; else python post.py; fi
-      - name: Salva stato coda
-        run: |
-          git config user.name "offerte-bot"
-          git config user.email "offerte-bot@users.noreply.github.com"
-          git add queue.csv
-          git diff --cached --quiet || (git commit -m "coda aggiornata" && git pull --rebase -q && git push)
+          if [ "$MODE" = "check" ]; then python post.py check
+          elif [ "$MODE" = "run" ]; then python post.py
+          else python post.py loop 58; fi
