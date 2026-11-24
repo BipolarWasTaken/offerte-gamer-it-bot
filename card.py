@@ -14,29 +14,48 @@ def fetch(url, timeout=20):
         return r.read()
 
 
-def product_image(asin, img_url=""):
-    """Prova: URL fornito, poi og:image / immagine principale della pagina Amazon.it."""
-    urls = []
+TAG = "offertegameri-21"
+
+
+def widget_url(asin, size=500):
+    """Immagine prodotto tramite il widget immagini del programma Affiliazione Amazon."""
+    return ("https://ws-eu.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=%s&Format=_SL%d_"
+            "&ID=AsinImage&MarketPlace=IT&ServiceVersion=20070822&WS=1&tag=%s" % (asin, size, TAG))
+
+
+def _try(u, log):
+    try:
+        im = Image.open(io.BytesIO(fetch(u))).convert("RGB")
+        log.append("%s -> %sx%s" % (u[:70], im.width, im.height))
+        if im.width >= 200 and im.height >= 200:
+            return im
+    except Exception as e:
+        log.append("%s -> ERRORE %s" % (u[:70], str(e)[:60]))
+    return None
+
+
+def product_image(asin, img_url="", log=None):
+    """Prova: URL fornito, widget Affiliazione Amazon, pagina prodotto Amazon.it."""
+    log = log if log is not None else []
     if img_url:
-        urls.append(img_url)
-    else:
-        try:
-            page = fetch(f"https://www.amazon.it/dp/{asin}").decode("utf-8", "ignore")
-            for pat in (r'"hiRes":"(https://[^"]+?\.jpg)"', r'"large":"(https://[^"]+?\.jpg)"',
-                        r'<meta property="og:image" content="(https://[^"]+)"',
-                        r'id="landingImage"[^>]+src="(https://[^"]+)"'):
-                m = re.search(pat, page)
-                if m:
-                    urls.append(m.group(1)); break
-        except Exception:
-            pass
-    for u in urls:
-        try:
-            im = Image.open(io.BytesIO(fetch(u))).convert("RGB")
-            if im.width >= 200 and im.height >= 200:
-                return im
-        except Exception:
-            continue
+        im = _try(img_url, log)
+        if im:
+            return im
+    im = _try(widget_url(asin), log)
+    if im:
+        return im
+    try:
+        page = fetch("https://www.amazon.it/dp/%s" % asin).decode("utf-8", "ignore")
+        for pat in (r'"hiRes":"(https://[^"]+?\.jpg)"', r'"large":"(https://[^"]+?\.jpg)"',
+                    r'<meta property="og:image" content="(https://[^"]+)"',
+                    r'id="landingImage"[^>]+src="(https://[^"]+)"'):
+            m = re.search(pat, page)
+            if m:
+                im = _try(m.group(1), log)
+                if im:
+                    return im
+    except Exception as e:
+        log.append("pagina dp -> ERRORE %s" % str(e)[:60])
     return None
 
 

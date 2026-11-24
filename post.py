@@ -219,8 +219,11 @@ def main():
     if mode == "imgtest":
         import card
         for a in sys.argv[2:]:
-            im = card.product_image(a)
+            lg = []
+            im = card.product_image(a, log=lg)
             print(a, "foto:", (im.size if im else "NON TROVATA"))
+            for l in lg:
+                print("   ", l)
         return 0
     if mode == "loop":
         minutes = int(sys.argv[2]) if len(sys.argv) > 2 else 58
