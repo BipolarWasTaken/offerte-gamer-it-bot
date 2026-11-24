@@ -31,7 +31,10 @@ HASHTAGS = {
     "cuffie": "#Audio #Gaming", "storage": "#SSD #PC", "pc": "#PC #Tech", "laptop": "#PC #Tech",
     "monitor": "#Monitor #PC", "tv": "#TV #Tech", "smartphone": "#Smartphone #Tech",
     "audio": "#Audio #Tech", "gadget": "#Gadget #Tech", "casa": "#Casa #Tech", "altro": "#Tech",
+    "bellezza": "#Bellezza #Cura", "giocattoli": "#LEGO #Giocattoli", "tablet": "#Tablet #Tech",
+    "cucina": "#Cucina #Casa", "utensili": "#Bricolage #FaiDaTe", "fai da te": "#Bricolage #FaiDaTe",
 }
+BASE_TAGS = "#BlackFriday #OfferteAmazon #Sconti"
 HOOK_DEFAULT = "Sconto attivo adesso su Amazon: il prezzo aggiornato lo vedi nella pagina del prodotto."
 DEAL_DEFAULT = "OFFERTA BLACK FRIDAY"
 
@@ -87,6 +90,8 @@ def message(r):
     if pi:
         foot += f" · prezzo del {pi[3].strftime('%d/%m %H:%M')}, può variare"
     lines.append(f"<i>{foot}</i>")
+    tags = f"{BASE_TAGS} {HASHTAGS.get((r.get('category') or '').strip().lower(), '#Tech')}"
+    lines.append(tags)
     return "\n".join(lines)
 
 
