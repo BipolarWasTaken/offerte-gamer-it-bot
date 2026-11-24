@@ -1,5 +1,5 @@
 """Genera l'immagine dell'offerta: foto prodotto + badge sconto + prezzo."""
-import io, re, urllib.request
+import io, re, time, urllib.request
 from PIL import Image, ImageDraw, ImageFont
 
 ANTON = "fonts/Anton-Regular.ttf"
@@ -41,11 +41,11 @@ def product_image(asin, img_url="", log=None):
         im = _try(img_url, log)
         if im:
             return im
-    im = _try(widget_url(asin), log)
-    if im:
-        return im
-    try:
-        page = fetch("https://www.amazon.it/dp/%s" % asin).decode("utf-8", "ignore")
+    for attempt in range(3):
+        try:
+            page = fetch("https://www.amazon.it/dp/%s" % asin).decode("utf-8", "ignore")
+        except Exception as e:
+            log.append("pagina dp -> ERRORE %s" % str(e)[:60]); time.sleep(2); continue
         for pat in (r'"hiRes":"(https://[^"]+?\.jpg)"', r'"large":"(https://[^"]+?\.jpg)"',
                     r'<meta property="og:image" content="(https://[^"]+)"',
                     r'id="landingImage"[^>]+src="(https://[^"]+)"'):
@@ -54,8 +54,7 @@ def product_image(asin, img_url="", log=None):
                 im = _try(m.group(1), log)
                 if im:
                     return im
-    except Exception as e:
-        log.append("pagina dp -> ERRORE %s" % str(e)[:60])
+        time.sleep(2)
     return None
 
 
