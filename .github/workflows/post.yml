@@ -3,6 +3,9 @@ name: Pubblica offerte su Telegram
 on:
   schedule:
     - cron: "17,47 * * * *"
+  push:
+    paths:
+      - queue.csv
   workflow_dispatch:
     inputs:
       mode:
@@ -19,7 +22,7 @@ concurrency:
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,4 +37,4 @@ jobs:
           if [ "$MODE" = "check" ]; then python post.py check
           elif [ "$MODE" = "imgtest" ]; then python post.py imgtest B09B8X9RGM B0DKKH9H5V B0DQ5XX1FP
           elif [ "$MODE" = "run" ]; then python post.py
-          else python post.py loop 58; fi
+          else python post.py loop 345; fi

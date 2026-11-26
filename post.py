@@ -16,9 +16,10 @@ CHAT = os.environ.get("TELEGRAM_CHAT_ID", "@OfferteGamerIT")
 TAG = os.environ.get("AFFILIATE_TAG", "offertegameri-21")
 FIELDS = ["id", "send_at", "category", "emoji", "title", "asin", "status", "note", "source", "sent_at", "hook", "deal",
           "price", "old_price", "priced_at", "img"]
-PRICE_MAX_AGE_H = 10      # prezzi più vecchi di così non vengono mostrati
-MAX_PER_PASS = 3          # massimo post per controllo (evita raffiche)
-GRACE_HOURS = 12          # oltre questo ritardo il post viene scartato come "scaduto"
+PRICE_MAX_AGE_H = 24      # prezzi più vecchi di così non vengono mostrati né pubblicati (il post riporta data/ora del prezzo)
+MAX_PER_PASS = 1          # massimo post per controllo (evita raffiche)
+MIN_GAP_MIN = 6           # minuti minimi tra due post consecutivi (anche tra esecuzioni diverse)
+GRACE_HOURS = 8           # oltre questo ritardo il post viene scartato come "scaduto"
 SHARE_URL = "https://t.me/share/url?url=https%3A%2F%2Ft.me%2FOfferteGamerIT&text=Offerte%20Amazon%20verificate%20ogni%20giorno"
 
 LABEL = {
@@ -169,6 +170,13 @@ def one_pass():
     now = datetime.now(ROME).replace(tzinfo=None)
     sent = 0
     changed = False
+    last_sent = None
+    for r in rows:
+        try:
+            t = datetime.strptime((r.get("sent_at") or "").strip()[:16], "%Y-%m-%d %H:%M")
+            last_sent = t if not last_sent or t > last_sent else last_sent
+        except ValueError:
+            pass
     for r in rows:
         if (r.get("status") or "").strip().lower() != "pending":
             continue
@@ -182,13 +190,16 @@ def one_pass():
             r["status"] = "scaduto"; changed = True; continue
         if len((r.get("asin") or "").strip()) != 10:
             r["status"] = "errore-asin"; changed = True; continue
-        if sent >= MAX_PER_PASS:
+        if (r.get("price") or "").strip() and not price_info(r):
+            r["status"] = "scaduto"; r["note"] = ((r.get("note") or "") + " prezzo scaduto").strip(); changed = True; continue
+        if sent >= MAX_PER_PASS or (last_sent and now - last_sent < timedelta(minutes=MIN_GAP_MIN)):
             continue
         try:
             res = send(r)
             r["status"] = "sent" if res.get("ok") else "errore-api"
             r["sent_at"] = now.strftime("%Y-%m-%d %H:%M")
             sent += 1
+            last_sent = now
         except Exception as e:  # non stampare mai il token
             r["status"] = "errore-rete"
             print("errore invio", r["id"], type(e).__name__)
