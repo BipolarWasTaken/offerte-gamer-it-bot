@@ -1,0 +1,13 @@
+name: probe-amazon
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: fetch
+        run: |
+          for u in "https://www.amazon.it/blackfriday" "https://www.amazon.it/gp/goldbox"; do
+            code=$(curl -s -o /tmp/p.html -w "%{http_code} %{size_download}" -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36" -H "Accept-Language: it-IT,it;q=0.9" "$u")
+            echo "$u -> $code"
+            echo "dp links: $(grep -o '/dp/[A-Z0-9]\{10\}' /tmp/p.html | sort -u | wc -l)  captcha: $(grep -ci 'captcha\|robot check\|api-services-support' /tmp/p.html)  prezzi: $(grep -o '[0-9]\+,[0-9][0-9] €' /tmp/p.html | wc -l)"
+          done
